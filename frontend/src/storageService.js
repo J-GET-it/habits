@@ -438,7 +438,60 @@ const storageService = {
     });
   },
 
+  // Возвращает статусы всех привычек за текущий квартал
+  getQuarterlyStatus: async (mode, date, options = {}) => {
+    if (mode === 'cloud') {
+      try {
+        return await fetchJson(`/api/v1/habits/quarterly_status/?date=${date}`, options);
+      } catch (e) {
+        console.warn('Cloud getQuarterlyStatus failed, falling back to local:', e);
+      }
+    }
+    // Local fallback — собираем данные из localStorage
+    let habits = [];
+    let statuses = [];
+    try {
+      habits = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.HABITS) || '[]');
+      if (!Array.isArray(habits)) habits = [];
+      statuses = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.STATUSES) || '[]');
+      if (!Array.isArray(statuses)) statuses = [];
+    } catch (e) {
+      console.error('Error parsing local storage data', e);
+    }
+
+    const ref = new Date(date + 'T00:00:00');
+    const quarterMonthStart = Math.floor(ref.getMonth() / 3) * 3;
+    const quarterStart = new Date(Date.UTC(ref.getFullYear(), quarterMonthStart, 1));
+    const quarterEnd = new Date(Date.UTC(ref.getFullYear(), quarterMonthStart + 3, 0)); // последний день квартала
+
+    const totalDays = Math.round((quarterEnd - quarterStart) / 86400000) + 1;
+
+    return habits.filter(h => !h.is_archived).map(h => {
+      const days = [];
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(quarterStart.getTime());
+        d.setUTCDate(d.getUTCDate() + i);
+        const dStr = toLocalDateString(d);
+        const entry = statuses.find(s => String(s.habit) === String(h.id) && s.date === dStr);
+        days.push({
+          date: dStr,
+          is_done: entry ? entry.is_done : false,
+          is_restored: entry ? entry.is_restored : false,
+        });
+      }
+      return {
+        id: h.id,
+        name: h.name,
+        start_date: h.start_date || null,
+        quarter_start: toLocalDateString(quarterStart),
+        quarter_end: toLocalDateString(quarterEnd),
+        days,
+      };
+    });
+  },
+
   saveStatus: async (mode, statusData, options = {}) => {
+
     if (mode === 'cloud') {
       const response = await fetch('/api/v1/habits/update_status/', {
         ...options,

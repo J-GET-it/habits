@@ -9,6 +9,8 @@ import translations from './translations';
 import storageService from './storageService';
 import HabitCounts from './components/HabitCounts';
 import HandshakeMeme from './components/HandshakeMeme';
+import QuarterlyHeatmap from './components/QuarterlyHeatmap';
+
 
 
 const getMondayString = (dateInput = new Date()) => {
@@ -59,6 +61,10 @@ const App = () => {
   const [storageMode, setStorageMode] = useState(() => storageService.getStorageMode());
 
   const [habitsData, setHabitsData] = useState([]);
+  // Квартальные данные: { habitId: { days: [...] } }
+  const [quarterlyData, setQuarterlyData] = useState({});
+  // Управление видимостью хитмапа для каждой привычки
+  const [heatmapVisible, setHeatmapVisible] = useState({});
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -368,7 +374,26 @@ const App = () => {
     return loadWeekData(dateKey);
   }, [currentWeekDate, loadWeekData, storageMode]); // Added storageMode dependency
 
+  // Загрузка квартальных данных всех привычек
+  const fetchQuarterlyData = React.useCallback(async () => {
+    try {
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const data = await storageService.getQuarterlyStatus(storageMode, todayStr, {
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'include'
+      });
+      if (Array.isArray(data)) {
+        const byId = {};
+        data.forEach(habit => { byId[habit.id] = habit; });
+        setQuarterlyData(byId);
+      }
+    } catch (error) {
+      console.error('Error fetching quarterly data:', error);
+    }
+  }, [storageMode]);
+
   // Fetch archived habits
+
   const fetchArchivedHabits = React.useCallback(async () => {
     try {
       const data = await storageService.getArchivedHabits(storageMode, {
@@ -444,6 +469,7 @@ const App = () => {
       fetchArchivedHabits();
       fetchCategories();
       fetchArchivedCategories();
+      fetchQuarterlyData();
     } catch (error) {
       console.error('Auth check error:', error);
       // Still load data even if auth fails (especially for local mode)
@@ -451,11 +477,12 @@ const App = () => {
       fetchArchivedHabits();
       fetchCategories();
       fetchArchivedCategories();
+      fetchQuarterlyData();
       setIsAuthenticated(false);
     } finally {
       setAuthLoading(false);
     }
-  }, [fetchHabits, fetchArchivedHabits, fetchCategories, fetchArchivedCategories, loadReminderSettingsFromServer]);
+  }, [fetchHabits, fetchArchivedHabits, fetchCategories, fetchArchivedCategories, loadReminderSettingsFromServer, fetchQuarterlyData]);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -1599,7 +1626,53 @@ const App = () => {
                         )}
                       </span>
                     </div>
+
+                    {/* Квартальный трекер — кнопка и раскрывающийся хитмап */}
+                    {(() => {
+                      const isVisible = !!heatmapVisible[habit.id];
+                      const qData = quarterlyData[habit.id];
+                      return (
+                        <div className="habit-quarterly-wrapper">
+                          <button
+                            type="button"
+                            className={`quarterly-toggle-btn ${isVisible ? 'active' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setHeatmapVisible(prev => ({ ...prev, [habit.id]: !prev[habit.id] }));
+                            }}
+                            title={isVisible ? 'Скрыть квартальный трекер' : 'Показать квартальный трекер'}
+                            aria-expanded={isVisible}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                              <rect x="0.5" y="0.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.9"/>
+                              <rect x="4.5" y="0.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.7"/>
+                              <rect x="8.5" y="0.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.5"/>
+                              <rect x="0.5" y="4.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.6"/>
+                              <rect x="4.5" y="4.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.9"/>
+                              <rect x="8.5" y="4.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.4"/>
+                              <rect x="0.5" y="8.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.3"/>
+                              <rect x="4.5" y="8.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.7"/>
+                              <rect x="8.5" y="8.5" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.9"/>
+                            </svg>
+                          </button>
+                          {isVisible && qData && (
+                            <QuarterlyHeatmap
+                              days={qData.days}
+                              startDate={qData.quarter_start}
+                              habitStartDate={habit.start_date}
+                              todayStr={todayStr}
+                              language={language}
+                            />
+                          )}
+                          {isVisible && !qData && (
+                            <div className="quarterly-loading">…</div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     <div className="habit-row-content">
+
                       <div className="habit-checks">
                         {WEEK_DAYS.map((_, index) => {
                           const slotDate = new Date(Date.UTC(cwYear, cwMonth - 1, cwDay));

@@ -704,6 +704,84 @@ class HabitViewSet(viewsets.ModelViewSet):
 
 
     @action(detail=False, methods=['get'])
+    @method_decorator(ensure_csrf_cookie)
+    def quarterly_status(self, request):
+        """
+        Возвращает статусы выполнения привычек за текущий квартал (~91 день).
+        Параметр ?date=YYYY-MM-DD — опорная дата (по умолчанию сегодня).
+        Ответ: список объектов { id, name, days: [{date, is_done, is_restored}] }
+        """
+        try:
+            user_profile, _ = UserAll.objects.get_or_create(
+                auth_user=request.user,
+                defaults={'name': request.user.username, 'age': ''}
+            )
+
+            date_param = request.query_params.get('date')
+            try:
+                ref_date = datetime.strptime(date_param, '%Y-%m-%d').date() if date_param else date.today()
+            except ValueError:
+                ref_date = date.today()
+
+            # Квартал: определяем начало текущего квартала
+            quarter_month_start = ((ref_date.month - 1) // 3) * 3 + 1
+            quarter_start = date(ref_date.year, quarter_month_start, 1)
+            # Конец квартала: начало следующего квартала - 1 день
+            if quarter_month_start + 3 > 12:
+                quarter_end = date(ref_date.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                quarter_end = date(ref_date.year, quarter_month_start + 3, 1) - timedelta(days=1)
+
+            habits = Habit.objects.filter(user=user_profile, is_archived=False).order_by('order')
+
+            # Загружаем все записи за квартал одним запросом
+            all_dates = Date.objects.filter(
+                user=user_profile,
+                habit__in=habits,
+                habit_date__range=[quarter_start, quarter_end]
+            ).values('habit_id', 'habit_date', 'is_done', 'is_restored')
+
+            # Индексируем по (habit_id, date)
+            date_index = {}
+            for entry in all_dates:
+                key = (entry['habit_id'], entry['habit_date'].isoformat())
+                date_index[key] = {
+                    'is_done': entry['is_done'],
+                    'is_restored': entry['is_restored']
+                }
+
+            result = []
+            total_days = (quarter_end - quarter_start).days + 1
+
+            for habit in habits:
+                days = []
+                for i in range(total_days):
+                    d = quarter_start + timedelta(days=i)
+                    d_str = d.isoformat()
+                    entry = date_index.get((habit.id, d_str))
+                    days.append({
+                        'date': d_str,
+                        'is_done': entry['is_done'] if entry else False,
+                        'is_restored': entry['is_restored'] if entry else False,
+                    })
+
+                result.append({
+                    'id': habit.id,
+                    'name': habit.name,
+                    'start_date': habit.start_date.isoformat() if habit.start_date else None,
+                    'quarter_start': quarter_start.isoformat(),
+                    'quarter_end': quarter_end.isoformat(),
+                    'days': days,
+                })
+
+            return Response(result)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    @action(detail=False, methods=['get'])
     def summary_report(self, request):
         try:
             user_profile, _ = UserAll.objects.get_or_create(
