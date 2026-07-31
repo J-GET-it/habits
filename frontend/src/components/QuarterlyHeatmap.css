@@ -1,0 +1,155 @@
+/* QuarterlyHeatmap.css — Квартальный трекер привычки */
+
+.quarterly-heatmap {
+  margin-top: 6px;
+  margin-bottom: 2px;
+  padding: 0 2px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none; /* Firefox */
+  -webkit-overflow-scrolling: touch;
+  /* Не даём вырасти шире родителя */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.quarterly-heatmap::-webkit-scrollbar {
+  display: none;
+}
+
+.heatmap-blocks {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  min-width: max-content;
+}
+
+.heatmap-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.heatmap-block-label {
+  font-size: 9px;
+  color: var(--text-secondary, #888);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  line-height: 1;
+  padding-left: 1px;
+  text-transform: lowercase;
+}
+
+.heatmap-squares {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: calc(14 * 10px + 13 * 2px); /* 14 квадрата × 10px + 13 промежутка */
+}
+
+/* Базовый квадратик */
+.heatmap-sq {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+  cursor: default;
+}
+
+.heatmap-sq:hover {
+  transform: scale(1.4);
+  z-index: 10;
+  position: relative;
+}
+
+/* Состояния */
+.heatmap-sq--done {
+  background-color: #22c55e; /* яркий зелёный */
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
+}
+
+.heatmap-sq--restored {
+  background-color: #86efac; /* светло-зелёный для восполненных */
+  box-shadow: 0 0 0 1px rgba(134, 239, 172, 0.2);
+}
+
+.heatmap-sq--missed {
+  background-color: var(--sq-missed-bg, rgba(120, 120, 120, 0.18));
+  border: 1px solid var(--sq-missed-border, rgba(120, 120, 120, 0.12));
+}
+
+.heatmap-sq--today {
+  background-color: transparent;
+  border: 1.5px solid #22c55e;
+}
+
+.heatmap-sq--future {
+  background-color: var(--sq-future-bg, rgba(120, 120, 120, 0.07));
+  border: 1px solid var(--sq-future-border, rgba(120, 120, 120, 0.07));
+}
+
+.heatmap-sq--before {
+  background-color: transparent;
+  border: 1px dashed var(--sq-before-border, rgba(120, 120, 120, 0.1));
+}
+
+/* Тёмная тема */
+[data-theme="dark"] .heatmap-sq--missed,
+.dark .heatmap-sq--missed {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .heatmap-sq--future,
+.dark .heatmap-sq--future {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .heatmap-sq--before,
+.dark .heatmap-sq--before {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .heatmap-block-label,
+.dark .heatmap-block-label {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* Авто тема — берёт системные предпочтения */
+@media (prefers-color-scheme: dark) {
+  .heatmap-sq--missed {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .heatmap-sq--future {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.04);
+  }
+  .heatmap-sq--before {
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+  .heatmap-block-label {
+    color: rgba(255, 255, 255, 0.38);
+  }
+}
+
+/* Адаптация для очень маленьких экранов — уменьшаем квадратики */
+@media (max-width: 360px) {
+  .heatmap-sq {
+    width: 8px;
+    height: 8px;
+    border-radius: 1.5px;
+  }
+  .heatmap-squares {
+    width: calc(14 * 8px + 13 * 2px);
+  }
+  .heatmap-block-label {
+    font-size: 8px;
+  }
+}
