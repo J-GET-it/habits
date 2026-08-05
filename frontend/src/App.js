@@ -1376,7 +1376,7 @@ const App = () => {
 
               return (
                 <React.Fragment key={day}>
-                  {isMonthStart && (
+                  {isMonthStart && index < 6 && (
                     <div className="grid-col day-col transition-month-col" style={{ opacity: 0.85 }}>
                       <div className="day-completion-count">&nbsp;</div>
                       <div className="day-name" style={{ color: '#10B981', fontWeight: 'bold' }}>{language === 'ru' ? 'МЕС' : 'MON'}</div>
@@ -1486,7 +1486,7 @@ const App = () => {
 
                         return (
                           <React.Fragment key={slotDateStr}>
-                            {isMonthStart && (
+                            {isMonthStart && index < 6 && (
                               <div className="grid-col day-completion-col transition-month-col" style={{ opacity: 0.5 }}>
                                 <span className="day-completion-count">-</span>
                               </div>
@@ -1737,7 +1737,7 @@ const App = () => {
 
                           return (
                             <React.Fragment key={slotDateStr}>
-                              {isMonthStart && (
+                              {isMonthStart && index < 6 && (
                                 <div className="grid-col transition-month-col" style={{ 
                                   display: 'flex', 
                                   flexDirection: 'column', 
