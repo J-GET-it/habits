@@ -824,11 +824,18 @@ body {
 .habit-quarterly-wrapper {
   width: 100%;
   min-width: 0; /* Критично для flex — не даёт вырасти шире родителя */
-  overflow: hidden; /* Обрезаем выход за границу */
+  overflow-x: auto; /* Разрешаем горизонтальный скролл для всего квартала */
+  overflow-y: visible;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
+}
+
+.habit-quarterly-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .quarterly-toggle-btn {
