@@ -4,13 +4,8 @@
   margin-top: 6px;
   margin-bottom: 2px;
   padding: 0 2px;
-  overflow-x: auto;
-  overflow-y: visible;
-  scrollbar-width: none; /* Firefox */
-  -webkit-overflow-scrolling: touch;
-  /* Не даём вырасти шире родителя */
-  width: 100%;
-  max-width: 100%;
+  overflow: visible; /* Прокрутка на уровне .habit-quarterly-wrapper */
+  width: max-content; /* Растягиваемся до реального контента */
   box-sizing: border-box;
 }
 
