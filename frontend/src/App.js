@@ -4613,18 +4613,18 @@ const App = () => {
                     const diffMs = today - noteDate;
                     const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
                     const formattedDate = noteDate.toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long' });
-                    if (diffDays === 0) return language === 'ru' ? `Сегодня, ${formattedDate}` : `Today, ${formattedDate}`;
-                    if (diffDays === 1) return language === 'ru' ? `Вчера, ${formattedDate}` : `Yesterday, ${formattedDate}`;
-                    if (diffDays === 2) return language === 'ru' ? `Позавчера, ${formattedDate}` : `2 days ago, ${formattedDate}`;
+                    if (diffDays === 0) return language === 'ru' ? `${formattedDate}, Сегодня` : `${formattedDate}, Today`;
+                    if (diffDays === 1) return language === 'ru' ? `${formattedDate}, Вчера` : `${formattedDate}, Yesterday`;
+                    if (diffDays === 2) return language === 'ru' ? `${formattedDate}, Позавчера` : `${formattedDate}, 2 days ago`;
                     if (language === 'ru') {
                       // Русская склонение: 2-4 — «дня», 5+ — «дней»
                       const mod10 = diffDays % 10;
                       const mod100 = diffDays % 100;
                       let suffix = 'дней';
                       if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) suffix = 'дня';
-                      return `${diffDays} ${suffix} назад, ${formattedDate}`;
+                      return `${formattedDate}, ${diffDays} ${suffix} назад`;
                     }
-                    return `${diffDays} days ago, ${formattedDate}`;
+                    return `${formattedDate}, ${diffDays} days ago`;
                   };
 
                   // Метка для «сегодняшней» заметки
