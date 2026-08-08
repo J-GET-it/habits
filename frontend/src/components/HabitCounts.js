@@ -70,7 +70,7 @@ export default function HabitCounts({ weeklyCount, weeklyAward, habit, isLastQua
             </div>
           )}
         </div>
-        {!isLastQuantityLess1 && (
+        {(!isLastQuantityLess1 || habit.use_target) && (
           <div className="habit-count-row">
             <div 
               className="habit-count-overflow weekly"
@@ -79,7 +79,7 @@ export default function HabitCounts({ weeklyCount, weeklyAward, habit, isLastQua
             >
               {habit.weekly_overflow || 0}
             </div>
-            {habit.use_target ? (
+            {habit.use_target && habit.quantity_target > 0 ? (
               <div 
                 className="habit-count-overflow monthly progress-bar purple" 
                 style={{ '--progress-percent': `${quantityPercent}%` }}

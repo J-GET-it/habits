@@ -1765,7 +1765,7 @@ const App = () => {
                                   )}
 
                                   {!isLastQuantityLess1 && (
-                                    habit.use_target ? (
+                                    habit.use_target && habit.quantity_target > 0 ? (
                                       <div 
                                         className="habit-count-overflow monthly progress-bar purple" 
                                         style={{ '--progress-percent': `${prevQuantityPercent}%`, margin: 0 }}
