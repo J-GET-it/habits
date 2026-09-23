@@ -15,13 +15,17 @@ echo " Habits — деплой обновлений"
 echo "======================================"
 
 # 1. Получаем новый код (если используется git)
-# Раскомментируйте если проект в git:
-# echo "[1/4] Получение нового кода..."
-# cd $HABITS_DIR
-# git pull
+echo "[1/4] Получение нового кода..."
+cd $HABITS_DIR
+git pull || true
 
-# 2. Обновление бэкенда
-echo "[1/3] Перезапуск Django (gunicorn)..."
+# 2. Обновление бэкенда и миграций
+echo "[2/4] Применение миграций и перезапуск Django..."
+cd $BACKEND_DIR
+if [ -f "$VENV" ]; then
+    source $VENV
+    python manage.py migrate --noinput || true
+fi
 
 # Попробуем оба варианта названия сервиса (habits-gunicorn или habits)
 if systemctl is-active --quiet habits-gunicorn 2>/dev/null; then

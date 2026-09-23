@@ -206,6 +206,12 @@ class Habit(models.Model):
         verbose_name="Цель количества",
         help_text="Целевое количество действий (например, страниц) в месяц"
     )
+    dismissed_comment_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Дата скрытой заметки",
+        help_text="Заметки до этой даты включительно не показываются на главном экране"
+    )
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -284,6 +290,10 @@ class Date(models.Model):
             self.name = f"{self.habit.name} - {self.habit_date}"
         if not self.slug:
             self.slug = unique_slugify(self, slugify(self.name))
+        if self.comment and self.comment.strip():
+            if self.habit.dismissed_comment_date and self.habit_date >= self.habit.dismissed_comment_date:
+                self.habit.dismissed_comment_date = None
+                self.habit.save(update_fields=['dismissed_comment_date'])
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

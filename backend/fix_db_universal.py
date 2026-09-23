@@ -31,6 +31,14 @@ def fix_sqlite():
             print("Successfully added created_at to api_habit (SQLite).")
         else:
             print("Column created_at already exists in api_habit (SQLite).")
+
+        if 'dismissed_comment_date' not in columns:
+            print("Adding column dismissed_comment_date to SQLite...")
+            cursor.execute("ALTER TABLE api_habit ADD COLUMN dismissed_comment_date DATE NULL")
+            conn.commit()
+            print("Successfully added dismissed_comment_date to api_habit (SQLite).")
+        else:
+            print("Column dismissed_comment_date already exists in api_habit (SQLite).")
         
         conn.close()
     except Exception as e:
@@ -73,6 +81,14 @@ def fix_mysql():
                     print("Successfully added created_at to api_habit (MySQL).")
                 else:
                     print("Column created_at already exists in api_habit (MySQL).")
+
+                if 'dismissed_comment_date' not in columns:
+                    print("Adding column dismissed_comment_date to MySQL...")
+                    cursor.execute("ALTER TABLE api_habit ADD COLUMN dismissed_comment_date DATE NULL")
+                    conn.commit()
+                    print("Successfully added dismissed_comment_date to api_habit (MySQL).")
+                else:
+                    print("Column dismissed_comment_date already exists in api_habit (MySQL).")
         finally:
             conn.close()
     except Exception as e:

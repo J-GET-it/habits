@@ -427,10 +427,30 @@ const storageService = {
         prevFriDone = statuses.some(s => String(s.habit) === String(h.id) && s.date === prevFriStr && s.is_done && !s.is_restored);
       }
 
+      const habitComments = statuses
+        .filter(s => String(s.habit) === String(h.id) && s.comment)
+        .sort((a, b) => (b.date > a.date ? 1 : -1));
+      const latestCommentEntry = habitComments.length > 0 ? habitComments[0] : null;
+      let latestComment = null;
+      let latestCommentDetails = null;
+      if (latestCommentEntry && (!h.dismissed_comment_date || latestCommentEntry.date > h.dismissed_comment_date)) {
+        latestComment = latestCommentEntry.comment;
+        latestCommentDetails = {
+          id: latestCommentEntry.id,
+          date: latestCommentEntry.date,
+          quantity: latestCommentEntry.quantity,
+          is_done: latestCommentEntry.is_done,
+          comment: latestCommentEntry.comment,
+          photo: latestCommentEntry.photo || null
+        };
+      }
+
       return {
         ...h,
         category_name: catObj ? catObj.name : null,
         statuses: habitStatuses,
+        latest_comment: latestComment,
+        latest_comment_details: latestCommentDetails,
         prev_week_sun_done: prevSunDone,
         prev_week_sat_done: prevSatDone,
         prev_week_fri_done: prevFriDone
@@ -546,6 +566,14 @@ const storageService = {
         }
       }
 
+      if (habitIndex !== -1 && comment && comment.trim() && habits[habitIndex].dismissed_comment_date) {
+        habits[habitIndex] = {
+          ...habits[habitIndex],
+          dismissed_comment_date: null
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEYS.HABITS, JSON.stringify(habits));
+      }
+
       return status;
     }
   },
@@ -564,16 +592,20 @@ const storageService = {
       if (!response.ok) throw new Error('Failed to clear comment');
       return response.json();
     } else {
-      // Локальный режим: очищаем комментарий в последнем статусе
+      // Локальный режим: скрываем заметку с главного экрана, сохраняя сам комментарий
+      const habits = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.HABITS) || '[]');
       const statuses = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.STATUSES) || '[]');
       const habitStatuses = statuses
         .filter(s => String(s.habit) === String(habitId) && s.comment)
         .sort((a, b) => (b.date > a.date ? 1 : -1));
       if (habitStatuses.length > 0) {
-        const idx = statuses.findIndex(s => s.id === habitStatuses[0].id);
-        if (idx !== -1) {
-          statuses[idx].comment = '';
-          localStorage.setItem(LOCAL_STORAGE_KEYS.STATUSES, JSON.stringify(statuses));
+        const habitIdx = habits.findIndex(h => String(h.id) === String(habitId));
+        if (habitIdx !== -1) {
+          habits[habitIdx] = {
+            ...habits[habitIdx],
+            dismissed_comment_date: habitStatuses[0].date
+          };
+          localStorage.setItem(LOCAL_STORAGE_KEYS.HABITS, JSON.stringify(habits));
         }
       }
       return { status: 'cleared' };

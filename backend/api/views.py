@@ -499,22 +499,27 @@ class HabitViewSet(viewsets.ModelViewSet):
                     habit_data['latest_comment'] = None
                     habit_data['latest_comment_details'] = None
                     if latest_date_entry:
-                        habit_data['latest_comment'] = latest_date_entry.comment
-                        photo_url = None
-                        if latest_date_entry.photo:
-                            try:
-                                photo_url = request.build_absolute_uri(latest_date_entry.photo.url)
-                            except Exception:
-                                pass
-                                
-                        habit_data['latest_comment_details'] = {
-                            "id": latest_date_entry.id,
-                            "date": latest_date_entry.habit_date.isoformat(),
-                            "quantity": latest_date_entry.quantity,
-                            "is_done": latest_date_entry.is_done,
-                            "comment": latest_date_entry.comment,
-                            "photo": photo_url
-                        }
+                        is_dismissed = False
+                        if habit.dismissed_comment_date and latest_date_entry.habit_date <= habit.dismissed_comment_date:
+                            is_dismissed = True
+
+                        if not is_dismissed:
+                            habit_data['latest_comment'] = latest_date_entry.comment
+                            photo_url = None
+                            if latest_date_entry.photo:
+                                try:
+                                    photo_url = request.build_absolute_uri(latest_date_entry.photo.url)
+                                except Exception:
+                                    pass
+                                    
+                            habit_data['latest_comment_details'] = {
+                                "id": latest_date_entry.id,
+                                "date": latest_date_entry.habit_date.isoformat(),
+                                "quantity": latest_date_entry.quantity,
+                                "is_done": latest_date_entry.is_done,
+                                "comment": latest_date_entry.comment,
+                                "photo": photo_url
+                            }
                     
                     # Fetch latest photo of all time (most recent)
                     latest_photo_entry = Date.objects.filter(
@@ -1810,7 +1815,7 @@ class HabitViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def clear_comment(self, request):
-        """Сбросить последний комментарий привычки"""
+        """Сбросить заметку привычки с главного экрана (сохраняя данные в истории)"""
         try:
             user_profile, _ = UserAll.objects.get_or_create(
                 auth_user=request.user,
@@ -1830,8 +1835,8 @@ class HabitViewSet(viewsets.ModelViewSet):
             ).exclude(comment__exact='').order_by('-habit_date', '-id').first()
 
             if latest_entry:
-                latest_entry.comment = ''
-                latest_entry.save(update_fields=['comment'])
+                habit.dismissed_comment_date = latest_entry.habit_date
+                habit.save(update_fields=['dismissed_comment_date'])
                 return Response({'status': 'cleared'})
             return Response({'status': 'no_comment'})
         except Exception as e:

@@ -31,7 +31,7 @@ class HabitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Habit
-        fields = ('id', 'user', 'name', 'category', 'category_name', 'category_slug', 'slug', 'order', 'is_archived', 'start_date', 'target_type', 'use_target', 'completion_target', 'quantity_target')
+        fields = ('id', 'user', 'name', 'category', 'category_name', 'category_slug', 'slug', 'order', 'is_archived', 'start_date', 'target_type', 'use_target', 'completion_target', 'quantity_target', 'dismissed_comment_date')
         read_only_fields = ('id', 'user', 'slug')
 
     def __init__(self, *args, **kwargs):
