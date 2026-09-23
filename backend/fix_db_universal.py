@@ -39,6 +39,16 @@ def fix_sqlite():
             print("Successfully added dismissed_comment_date to api_habit (SQLite).")
         else:
             print("Column dismissed_comment_date already exists in api_habit (SQLite).")
+
+        # Check api_remindersettings
+        cursor.execute("PRAGMA table_info(api_remindersettings)")
+        r_cols = [col[1] for col in cursor.fetchall()]
+        if 'last_sent_date' not in r_cols:
+            cursor.execute("ALTER TABLE api_remindersettings ADD COLUMN last_sent_date DATE NULL")
+            conn.commit()
+        if 'last_sent_times' not in r_cols:
+            cursor.execute("ALTER TABLE api_remindersettings ADD COLUMN last_sent_times JSON NULL")
+            conn.commit()
         
         conn.close()
     except Exception as e:
@@ -89,6 +99,17 @@ def fix_mysql():
                     print("Successfully added dismissed_comment_date to api_habit (MySQL).")
                 else:
                     print("Column dismissed_comment_date already exists in api_habit (MySQL).")
+
+                # Check api_remindersettings
+                cursor.execute("DESCRIBE api_remindersettings")
+                r_rows = cursor.fetchall()
+                r_cols = [row[0] for row in r_rows]
+                if 'last_sent_date' not in r_cols:
+                    cursor.execute("ALTER TABLE api_remindersettings ADD COLUMN last_sent_date DATE NULL")
+                    conn.commit()
+                if 'last_sent_times' not in r_cols:
+                    cursor.execute("ALTER TABLE api_remindersettings ADD COLUMN last_sent_times JSON NULL")
+                    conn.commit()
         finally:
             conn.close()
     except Exception as e:

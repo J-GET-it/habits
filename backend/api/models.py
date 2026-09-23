@@ -334,6 +334,8 @@ class ReminderSettings(models.Model):
     # Список времен в формате ["09:00", "18:00"]
     times = models.JSONField(default=list, verbose_name="Время напоминаний")
     time_zone = models.CharField(max_length=64, default='UTC', verbose_name="Часовой пояс")
+    last_sent_date = models.DateField(null=True, blank=True, verbose_name="Дата последней отправки")
+    last_sent_times = models.JSONField(default=list, blank=True, verbose_name="Отправленные времена за дату")
     
     class Meta:
         verbose_name = "Настройки напоминаний"

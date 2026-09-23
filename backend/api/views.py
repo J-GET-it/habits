@@ -2017,12 +2017,25 @@ def subscribe_push(request):
     user_profile, _ = UserAll.objects.get_or_create(auth_user=request.user)
     serializer = PushSubscriptionSerializer(data=request.data)
     if serializer.is_valid():
+        endpoint = serializer.validated_data['endpoint']
+        p256dh = serializer.validated_data['p256dh']
+        auth = serializer.validated_data['auth']
+
+        from urllib.parse import urlparse
+        domain = urlparse(endpoint).netloc
+        if domain:
+            # Delete stale subscriptions from the same push provider (e.g. apple, google) to prevent duplicate deliveries to the same device
+            PushSubscription.objects.filter(
+                user=user_profile,
+                endpoint__icontains=domain
+            ).exclude(endpoint=endpoint).delete()
+
         PushSubscription.objects.update_or_create(
             user=user_profile,
-            endpoint=serializer.validated_data['endpoint'],
+            endpoint=endpoint,
             defaults={
-                'p256dh': serializer.validated_data['p256dh'],
-                'auth': serializer.validated_data['auth']
+                'p256dh': p256dh,
+                'auth': auth
             }
         )
         return Response({'status': 'subscribed'}, status=status.HTTP_201_CREATED)

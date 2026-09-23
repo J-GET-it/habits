@@ -96,7 +96,7 @@ function checkReminders() {
       const reminderKey = `${today}-${time}`;
       if (!(reminderSettings.sentReminders || []).includes(reminderKey)) {
         console.log('[SW] Отправляем уведомление для:', time);
-        sendNotification();
+        sendNotification(false, time);
 
         if (!reminderSettings.sentReminders) reminderSettings.sentReminders = [];
         reminderSettings.sentReminders.push(reminderKey);
@@ -110,11 +110,14 @@ function checkReminders() {
 
 // ─── Отправка уведомления ─────────────────────────────────────────────────────
 
-function sendNotification(isTest = false) {
+function sendNotification(isTest = false, time = null) {
   const body = reminderSettings?.text || 'Не забудьте отметить привычки!';
+  const now = new Date();
+  const today = now.toDateString();
+  const timeStr = time || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const tag  = isTest
     ? `habit-test-${Date.now()}`
-    : `habit-reminder-${Date.now()}`;
+    : `habit-reminder-${today}-${timeStr}`;
 
   return self.registration.showNotification('Habbits 🌱', {
     body,
@@ -211,7 +214,21 @@ self.addEventListener('message', async (event) => {
     if (!reminderSettings) {
       reminderSettings = await loadSettingsFromDB();
     }
-    await sendNotification(false);
+    const targetTime = event.data?.time;
+    const now = new Date();
+    const today = now.toDateString();
+    const reminderKey = targetTime ? `${today}-${targetTime}` : null;
+    if (reminderKey && (reminderSettings?.sentReminders || []).includes(reminderKey)) {
+      // Уже отправлено ранее сегодня
+      return;
+    }
+    await sendNotification(false, targetTime);
+    if (reminderSettings && reminderKey) {
+      if (!reminderSettings.sentReminders) reminderSettings.sentReminders = [];
+      reminderSettings.sentReminders.push(reminderKey);
+      reminderSettings.notificationsSentToday = (reminderSettings.notificationsSentToday || 0) + 1;
+      await saveSettingsToDB(reminderSettings);
+    }
 
   } else if (type === 'PING') {
     // Keepalive-пинг от страницы — убеждаемся, что интервал запущен,
@@ -261,15 +278,16 @@ self.addEventListener('push', (event) => {
   let data = {};
   if (event.data) {
     try { data = event.data.json(); }
-    catch (e) { data = { title: 'Habbits', body: event.data.text() }; }
+    catch (e) { data = { title: 'Habbits 🌱', body: event.data.text() }; }
   }
 
   const title   = data.title  || 'Habbits 🌱';
+  const tag     = data.tag    || 'habit-reminder';
   const options = {
     body:    data.body   || 'Пора отметить привычки!',
     icon:    data.icon   || '/favicon.ico',
     badge:   data.badge  || '/favicon-96x96.png',
-    tag:     data.tag    || 'habit-reminder',
+    tag:     tag,
     vibrate: [200, 100, 200],
     data:    { url: data.url || '/' },
   };

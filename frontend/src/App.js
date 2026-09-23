@@ -796,10 +796,10 @@ const App = () => {
     setReminderTimesPerDay(value);
     const newCount = value === 'custom' ? customTimesPerDay : value;
     const currentCount = reminderTimes.length;
+    let newTimes = [...reminderTimes];
     
     if (newCount > currentCount) {
       // Add new times (default to 1 hour after the last time)
-      const newTimes = [...reminderTimes];
       const lastTime = reminderTimes[currentCount - 1] || '09:00';
       const [hours, minutes] = lastTime.split(':').map(Number);
       const lastDate = new Date();
@@ -812,27 +812,32 @@ const App = () => {
         newTimes.push(nextTime);
         lastDate.setHours(lastDate.getHours() + 1);
       }
-      setReminderTimes(newTimes);
     } else if (newCount < currentCount) {
       // Remove excess times
-      setReminderTimes(reminderTimes.slice(0, newCount));
+      newTimes = reminderTimes.slice(0, newCount);
     }
+
+    setReminderTimes(newTimes);
+    const settings = JSON.parse(localStorage.getItem('reminderSettings') || '{}');
+    const newSettings = { ...settings, reminderTimes: newTimes, timesPerDay: value };
+    localStorage.setItem('reminderSettings', JSON.stringify(newSettings));
+    saveReminderSettingsToServer({ times: newTimes });
+    sendSettingsToSW({ reminderTimes: newTimes, timesPerDay: value });
   };
 
   // Update reminder times when customTimesPerDay changes
   useEffect(() => {
     if (reminderTimesPerDay === 'custom') {
       const newCount = customTimesPerDay;
-      
-      setReminderTimes((prevTimes) => {
-        const currentCount = prevTimes.length;
+      const currentCount = reminderTimes.length;
+      if (newCount !== currentCount) {
+        let newTimes = [...reminderTimes];
         if (newCount > currentCount) {
-          const newTimes = [...prevTimes];
-          const lastTime = prevTimes[currentCount - 1] || '09:00';
+          const lastTime = reminderTimes[currentCount - 1] || '09:00';
           const [hours, minutes] = lastTime.split(':').map(Number);
           const lastDate = new Date();
           lastDate.setHours(hours, minutes, 0, 0);
-          
+
           for (let i = currentCount; i < newCount; i++) {
             const nextDate = new Date(lastDate);
             nextDate.setHours(nextDate.getHours() + 1);
@@ -840,12 +845,17 @@ const App = () => {
             newTimes.push(nextTime);
             lastDate.setHours(lastDate.getHours() + 1);
           }
-          return newTimes;
-        } else if (newCount < currentCount) {
-          return prevTimes.slice(0, newCount);
+        } else {
+          newTimes = reminderTimes.slice(0, newCount);
         }
-        return prevTimes;
-      });
+
+        setReminderTimes(newTimes);
+        const settings = JSON.parse(localStorage.getItem('reminderSettings') || '{}');
+        const newSettings = { ...settings, reminderTimes: newTimes, customTimesPerDay: newCount };
+        localStorage.setItem('reminderSettings', JSON.stringify(newSettings));
+        saveReminderSettingsToServer({ times: newTimes });
+        sendSettingsToSW({ reminderTimes: newTimes, customTimesPerDay: newCount });
+      }
     }
   }, [customTimesPerDay, reminderTimesPerDay]);
 
@@ -901,17 +911,19 @@ const App = () => {
             // Пробуем через SW, иначе напрямую
             navigator.serviceWorker?.ready.then(reg => {
               if (reg.active) {
-                reg.active.postMessage({ type: 'SHOW_REMINDER_NOTIFICATION' });
+                reg.active.postMessage({ type: 'SHOW_REMINDER_NOTIFICATION', time });
               } else {
                 new Notification('Habbits 🌱', {
                   body: reminderText || 'Не забудьте отметить привычки!',
                   icon: '/favicon.ico',
+                  tag: `habit-reminder-${today}-${time}`,
                 });
               }
             }).catch(() => {
               new Notification('Habbits 🌱', {
                 body: reminderText || 'Не забудьте отметить привычки!',
                 icon: '/favicon.ico',
+                tag: `habit-reminder-${today}-${time}`,
               });
             });
           }
