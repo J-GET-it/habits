@@ -633,7 +633,7 @@ body {
   margin-bottom: 2px;
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .category-weekly-total-container {
     width: 66px;
     min-width: 66px;
@@ -1555,7 +1555,38 @@ body {
 
   .check-box {
     height: 30px;
-    /* width handled by flex */
+    min-width: 0 !important;
+  }
+
+  .grid-col {
+    min-width: 0 !important;
+  }
+
+  .grid-col.transition-month-col {
+    min-width: 0 !important;
+  }
+
+  .grid-col.transition-month-col .habit-count,
+  .grid-col.transition-month-col .habit-count-overflow,
+  .grid-col.transition-month-col .habit-count.monthly.progress-bar,
+  .grid-col.transition-month-col .habit-count-overflow.monthly.progress-bar {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .grid-col.month-start {
+    margin-left: 6px !important;
+  }
+
+  .habit-checks {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .habit-row-content {
+    min-width: 0 !important;
+    overflow: visible !important;
   }
 
   .habit-count {
@@ -1622,20 +1653,20 @@ body {
   }
 
   .habit-checks {
-    gap: 3px;
-    overflow: hidden !important; /* Force overflow hidden on mobile */
-    min-width: 0 !important; /* Allow shrinking */
+    gap: 2px;
+    overflow: visible !important;
+    min-width: 0 !important;
   }
 
   .grid-col {
-    min-width: 28px !important; /* Smaller minimum for mobile */
-    max-width: 45px !important; /* Stricter maximum for mobile */
-    overflow: hidden !important;
+    min-width: 0 !important;
+    max-width: 45px !important;
+    overflow: visible !important;
   }
 
   .check-box {
     height: 26px;
-    /* width handled by flex */
+    min-width: 0 !important;
   }
 
   .habit-count {
@@ -1797,9 +1828,9 @@ body {
 
   .habit-count.monthly.progress-bar,
   .habit-count-overflow.monthly.progress-bar {
-    min-width: 34px;
+    min-width: 0 !important;
     max-width: 34px;
-    width: 34px;
+    width: 100%;
   }
 
   .habit-count.monthly.progress-bar {
@@ -1823,12 +1854,13 @@ body {
   }
 
   .grid-col {
-    min-width: 24px !important;
+    min-width: 0 !important;
     max-width: 40px !important;
   }
 
   .check-box {
     height: 24px;
+    min-width: 0 !important;
   }
 
   .day-completion-count {

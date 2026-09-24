@@ -38,12 +38,17 @@
   text-transform: lowercase;
 }
 
+.heatmap-block--active .heatmap-block-label {
+  color: #22c55e;
+  font-weight: 700;
+}
+
 .heatmap-squares {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
-  width: calc(14 * 10px + 13 * 2px); /* 14 квадрата × 10px + 13 промежутка */
+  width: max-content;
 }
 
 /* Базовый квадратик */

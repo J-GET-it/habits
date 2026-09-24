@@ -82,7 +82,7 @@ const CustomXAxisTick = ({ x, y, payload, period, isMobile, isDark, chartData, t
     const dataIndex = payload.index !== undefined ? payload.index : payload.value;
     const dataItem = chartData[dataIndex];
     
-    if (!dataItem) return null;
+    if (!dataItem || dataItem.isDummy) return null;
 
     let displayValue = '';
     if (period === 'day') {
@@ -1069,6 +1069,7 @@ const Charts = ({
     const [period, setPeriod] = useState('day');
     const [viewType, setViewType] = useState('habits'); // 'habits' or 'quantity'
     const [chartData, setChartData] = useState([]);
+    const [realDataCount, setRealDataCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [chartDate, setChartDate] = useState(() => {
         const now = new Date();
@@ -1308,51 +1309,65 @@ const Charts = ({
                         completionFraction: completionFraction
                     };
                 });
-                // Filter out columns for periods before any habits were created (where habit_count is 0)
+                // Filter out leading empty periods before any habits or activity occurred
+                let firstActiveIdx = -1;
+                if (period === 'month' || period === 'year') {
+                    const firstCompletionIdx = formattedData.findIndex(item => (
+                        (item.countCapped || 0) > 0 || 
+                        (item.countRestored || 0) > 0 || 
+                        (item.countExtra || 0) > 0
+                    ));
+
+                    if (firstCompletionIdx !== -1) {
+                        let startIdx = firstCompletionIdx;
+                        // For month: allow the immediately preceding month if it had habits
+                        if (period === 'month' && startIdx > 0 && (formattedData[startIdx - 1].habit_count || 0) > 0) {
+                            startIdx -= 1;
+                        }
+                        firstActiveIdx = startIdx;
+                    } else {
+                        // No completion activity yet: find first period with habit_count > 0, or show the current/last period
+                        const firstHabitIdx = formattedData.findIndex(item => (item.habit_count || 0) > 0);
+                        firstActiveIdx = firstHabitIdx !== -1 ? firstHabitIdx : Math.max(0, formattedData.length - 1);
+                    }
+                } else {
+                    firstActiveIdx = 0;
+                }
+
                 const filteredData = formattedData
-                    .filter(item => (item.habit_count || 0) > 0)
+                    .slice(firstActiveIdx)
                     .map((item, idx) => ({ ...item, index: idx }));
 
-                // Добавим фиктивные точки если данных мало
-                let paddedData = filteredData;
-                if (filteredData.length === 1) {
-                    paddedData = [
-                        { ...filteredData[0], index: 0 },
-                        { 
-                            ...filteredData[0], 
-                            index: 1, 
-                            countCapped: 0, 
-                            countRestored: 0, 
-                            countExtra: 0, 
-                            streakCount: 0, 
-                            label: '', 
-                            dayMonth: '', 
+                setRealDataCount(filteredData.length);
+
+                // For month and year, pad with dummy columns on the right so active bars start from the left and stay side-by-side
+                let paddedData = [...filteredData];
+                const minColumns = (period === 'month' || period === 'year') ? 5 : (filteredData.length === 1 ? 3 : filteredData.length);
+                if (filteredData.length > 0 && filteredData.length < minColumns) {
+                    while (paddedData.length < minColumns) {
+                        const idx = paddedData.length;
+                        paddedData.push({
+                            ...filteredData[0],
+                            index: idx,
+                            date: `dummy-${idx}`,
+                            countTotal: 0,
+                            countCapped: 0,
+                            nonStreakCapped: 0,
+                            countRestored: 0,
+                            countExtra: 0,
+                            streakCount: 0,
+                            label: '',
+                            dayMonth: '',
                             dayNumber: '',
                             percentage: '',
                             completionFraction: '',
                             isToday: false,
                             isCurrentWeek: false,
                             isCurrentMonth: false,
-                            isCurrentYear: false
-                        },
-                        { 
-                            ...filteredData[0], 
-                            index: 2, 
-                            countCapped: 0, 
-                            countRestored: 0, 
-                            countExtra: 0, 
-                            streakCount: 0, 
-                            label: '', 
-                            dayMonth: '', 
-                            dayNumber: '',
-                            percentage: '',
-                            completionFraction: '',
-                            isToday: false,
-                            isCurrentWeek: false,
-                            isCurrentMonth: false,
-                            isCurrentYear: false
-                        }
-                    ];
+                            isCurrentYear: false,
+                            isDummy: true
+                        });
+                    }
                 }
                 setChartData(paddedData);
         } catch (error) {
@@ -1722,7 +1737,7 @@ const Charts = ({
                                         margin={{ top: 8, right: 30, left: 0, bottom: 10 }}
                                         barCategoryGap={visibleChartData.length === 1 ? "2%" : (period === 'month' ? "5%" : "10%")}
                                         barGap={visibleChartData.length === 1 ? 0 : 2}
-                                        barSize={isMobile ? (period === 'month' ? 28 : 18) : isTablet ? (period === 'month' ? 36 : 22) : (period === 'month' ? 44 : 28)}
+                                        barSize={isMobile ? ((period === 'month' || period === 'year') ? 28 : 18) : isTablet ? ((period === 'month' || period === 'year') ? 36 : 22) : ((period === 'month' || period === 'year') ? 44 : 28)}
                                         maxBarSize={100}
                                     >
                                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#404040" : "#e0e0e0"} />
@@ -1818,7 +1833,7 @@ const Charts = ({
                                                 </Bar>
                                         {/* Зелёная пунктирная линия по вершинам столбцов */}
                                         <Line
-                                            dataKey={d => (d.countCapped || 0) + (d.countRestored || 0)}
+                                            dataKey={d => d.isDummy ? null : ((d.countCapped || 0) + (d.countRestored || 0))}
                                             type="monotone"
                                             stroke="#22c55e"
                                             strokeWidth={isMobile ? 1.5 : 2}
@@ -1835,7 +1850,7 @@ const Charts = ({
                             </div>
                         </div>
 
-                        {period === 'year' && visibleChartData.length > 0 && (
+                        {period === 'year' && visibleChartData.length > (isMobile ? 5 : 7) && (
                             <div className="main-scroll-indicator-container">
                                 <div className="main-scroll-indicator-bar" ref={mainIndicatorRef}></div>
                             </div>
@@ -1854,12 +1869,12 @@ const Charts = ({
                                 <button
                                     className="chart-expand-btn minus"
                                     onClick={handleRemoveColumn}
-                                    disabled={visibleChartData.length <= 1}
+                                    disabled={(realDataCount || visibleChartData.length) <= 1}
                                     aria-label={language === 'ru' ? 'Убрать столбец' : 'Remove column'}
                                     title={language === 'ru' ? 'Убрать старый столбец' : 'Remove oldest column'}
                                 >−</button>
                                 <span className="chart-expand-count">
-                                    {visibleChartData.length} {periodUnitLabel()}
+                                    {(realDataCount || visibleChartData.length)} {periodUnitLabel()}
                                 </span>
                                 <button
                                     className="chart-expand-btn plus"

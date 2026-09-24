@@ -747,6 +747,7 @@ const storageService = {
       }
 
       const stats = [];
+      const getHabitStart = (h) => h.start_date || (h.created_at ? h.created_at.split('T')[0] : (h.created ? h.created.split('T')[0] : null));
       
       if (start_date && end_date) {
         const start = new Date(start_date);
@@ -759,7 +760,7 @@ const storageService = {
           while (current <= end) {
             const dateStr = toLocalDateString(current);
             const dayStatuses = statuses.filter(s => s.date === dateStr && s.is_done && filteredHabits.some(h => String(h.id) === String(s.habit)));
-            const habitCount = filteredHabits.filter(h => !h.start_date || h.start_date <= dateStr).length;
+            const habitCount = filteredHabits.filter(h => { const s = getHabitStart(h); return s ? s <= dateStr : true; }).length;
             const completedCount = dayStatuses.length;
             const completedDays = dayStatuses.filter(s => !s.is_restored).length;
             const restoredDays = dayStatuses.filter(s => s.is_restored).length;
@@ -784,7 +785,7 @@ const storageService = {
             const startStr = toLocalDateString(current);
             const endStr = toLocalDateString(periodEnd);
             const rangeStatuses = statuses.filter(s => s.date >= startStr && s.date <= endStr && s.is_done && filteredHabits.some(h => String(h.id) === String(s.habit)));
-            const habitCount = filteredHabits.filter(h => !h.start_date || h.start_date <= endStr).length;
+            const habitCount = filteredHabits.filter(h => { const s = getHabitStart(h); return s ? s <= endStr : true; }).length;
             const completedCount = rangeStatuses.length;
             const completedDays = rangeStatuses.filter(s => !s.is_restored).length;
             const restoredDays = rangeStatuses.filter(s => s.is_restored).length;
@@ -809,7 +810,7 @@ const storageService = {
             const startStr = toLocalDateString(periodStart);
             const endStr = toLocalDateString(periodEnd);
             const rangeStatuses = statuses.filter(s => s.date >= startStr && s.date <= endStr && s.is_done && filteredHabits.some(h => String(h.id) === String(s.habit)));
-            const habitCount = filteredHabits.filter(h => !h.start_date || h.start_date <= endStr).length;
+            const habitCount = filteredHabits.filter(h => { const s = getHabitStart(h); return s ? s <= endStr : true; }).length;
             const completedCount = rangeStatuses.length;
             const completedDays = rangeStatuses.filter(s => !s.is_restored).length;
             const restoredDays = rangeStatuses.filter(s => s.is_restored).length;
@@ -834,7 +835,7 @@ const storageService = {
             const startStr = toLocalDateString(periodStart);
             const endStr = toLocalDateString(periodEnd);
             const rangeStatuses = statuses.filter(s => s.date >= startStr && s.date <= endStr && s.is_done && filteredHabits.some(h => String(h.id) === String(s.habit)));
-            const habitCount = filteredHabits.filter(h => !h.start_date || h.start_date <= endStr).length;
+            const habitCount = filteredHabits.filter(h => { const s = getHabitStart(h); return s ? s <= endStr : true; }).length;
             const completedCount = rangeStatuses.length;
             const completedDays = rangeStatuses.filter(s => !s.is_restored).length;
             const restoredDays = rangeStatuses.filter(s => s.is_restored).length;

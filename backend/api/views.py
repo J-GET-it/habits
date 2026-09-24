@@ -1139,7 +1139,11 @@ class HabitViewSet(viewsets.ModelViewSet):
                     )
 
                     # Count habits that existed by this date
-                    habit_count = habits.filter(Q(start_date__isnull=True) | Q(start_date__lte=current_date)).count()
+                    habit_count = habits.filter(
+                        Q(start_date__isnull=False, start_date__lte=current_date) |
+                        Q(start_date__isnull=True, created_at__isnull=False, created_at__lte=current_date) |
+                        Q(start_date__isnull=True, created_at__isnull=True)
+                    ).count()
                     
                     # Streak count for this day
                     streak_count = 0
@@ -1183,7 +1187,11 @@ class HabitViewSet(viewsets.ModelViewSet):
                     )
                     
                     days_in_period = (period_end - current_date).days + 1
-                    habit_count = habits.filter(Q(start_date__isnull=True) | Q(start_date__lte=period_end)).count()
+                    habit_count = habits.filter(
+                        Q(start_date__isnull=False, start_date__lte=period_end) |
+                        Q(start_date__isnull=True, created_at__isnull=False, created_at__lte=period_end) |
+                        Q(start_date__isnull=True, created_at__isnull=True)
+                    ).count()
                     
                     # Streak count for this week (total marks across all habits)
                     streak_count = 0
@@ -1238,7 +1246,11 @@ class HabitViewSet(viewsets.ModelViewSet):
                     )
                     
                     days_in_period = (period_end - current_date).days + 1
-                    habit_count = habits.filter(Q(start_date__isnull=True) | Q(start_date__lte=period_end)).count()
+                    habit_count = habits.filter(
+                        Q(start_date__isnull=False, start_date__lte=period_end) |
+                        Q(start_date__isnull=True, created_at__isnull=False, created_at__lte=period_end) |
+                        Q(start_date__isnull=True, created_at__isnull=True)
+                    ).count()
                     
                     months_ru = {
                         1: 'Янв', 2: 'Фев', 3: 'Мар', 4: 'Апр', 5: 'Май', 6: 'Июн',
@@ -1287,7 +1299,11 @@ class HabitViewSet(viewsets.ModelViewSet):
                     extra_quantity = day_dates.filter(quantity__isnull=False).aggregate(total=Sum('quantity'))['total'] or 0
                     completed_count = day_dates.filter(quantity__isnull=True).count() + extra_quantity
                     days_in_period = (period_end - current_date).days + 1
-                    habit_count = habits.filter(Q(start_date__isnull=True) | Q(start_date__lte=period_end)).count()
+                    habit_count = habits.filter(
+                        Q(start_date__isnull=False, start_date__lte=period_end) |
+                        Q(start_date__isnull=True, created_at__isnull=False, created_at__lte=period_end) |
+                        Q(start_date__isnull=True, created_at__isnull=True)
+                    ).count()
                     
                     # Streak count for this year
                     streak_count = 0

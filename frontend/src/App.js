@@ -1047,6 +1047,7 @@ const App = () => {
   // Swipe handlers for week navigation
   const handleSwipeStart = (e) => {
     if (e.touches.length > 1) return;
+    if (e.target.closest && (e.target.closest('.habit-quarterly-wrapper') || e.target.closest('.quarterly-heatmap'))) return;
     const touch = e.touches[0];
     swipeStartPos.current = { x: touch.clientX, y: touch.clientY };
     isSwiping.current = false;
@@ -1673,6 +1674,7 @@ const App = () => {
                               startDate={qData.quarter_start}
                               habitStartDate={habit.start_date}
                               todayStr={todayStr}
+                              activeDate={currentWeekDate}
                               language={language}
                             />
                           )}
